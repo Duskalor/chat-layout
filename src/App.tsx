@@ -4,6 +4,7 @@ import "./App.css";
 const socket = io("http://localhost:3000");
 
 function App() {
+  console.log("mierda");
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
