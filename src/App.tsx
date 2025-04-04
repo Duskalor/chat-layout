@@ -1,37 +1,17 @@
-import { useEffect } from "react";
-import { io } from "socket.io-client";
-import "./App.css";
-const socket = io("http://localhost:3000");
+import { Chat } from './components/chat';
+import { SelectUser } from './components/select-user';
+import { useMessages } from './hook/use-messages';
 
 function App() {
-  console.log("mierda");
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const data = Object.fromEntries(formData);
-    console.log(data);
-    socket.emit("messages", data);
-  };
-  useEffect(() => {
-    socket.on("connect", () => {
-      console.log("desde el servidor");
-    });
-    socket.on("messages", (data) => {
-      console.log(data);
-    });
-    return () => {
-      socket.off("connect");
-    };
-  }, []);
-
+  const { messages, isloading } = useMessages();
   return (
     <>
-      <div>
-        <form onSubmit={handleSubmit}>
-          <input type="text" name="text" />
-          <button> enviar </button>
-        </form>
-      </div>
+      {!isloading && (
+        <div className='container mx-auto'>
+          <SelectUser users={[...new Set(messages.map((m) => m.name))]} />
+          <Chat messages={messages} />
+        </div>
+      )}
     </>
   );
 }
