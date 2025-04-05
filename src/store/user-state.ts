@@ -1,18 +1,27 @@
 import { create } from 'zustand';
-import { Message } from '../assets/types/messages.type';
+import { Messages } from '../assets/types/messages.type';
+import { User } from '../assets/types/users.type';
+import { Chat } from '../assets/types/chat.type';
+import { socket } from '../lib/socket-client';
 
-type fn = (message: Message) => void;
+type fn = (message: Messages) => void;
 
 interface UserState {
-  name: string;
+  user: null | User;
   sendMessage: null | fn;
-  setName: (name: string) => void;
-  setSendMessage: (fn: fn) => void;
+  setUser: (user: User) => void;
+  setChats: (Chats: Chat[]) => void;
+  chats: Chat[];
+  handleSend: (user: Messages) => void;
 }
 
 export const userState = create<UserState>((set) => ({
-  name: 'Ana',
+  user: null,
   sendMessage: null,
-  setName: (name: string) => set({ name }),
-  setSendMessage: (fn: fn) => set(() => ({ sendMessage: fn })),
+  chats: [],
+  setUser: (user: User) => set({ user }),
+  setChats: (chats: Chat[]) => set({ chats }),
+  handleSend: (message: Messages) => {
+    socket.emit('sendMessage', message);
+  },
 }));

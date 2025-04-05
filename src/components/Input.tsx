@@ -1,23 +1,22 @@
-import React from 'react';
-
-import { pipe, object, string, minLength, parse } from 'valibot';
-import { useMessages } from '../hook/use-messages';
+import { parse } from 'valibot';
 import { userState } from '../store/user-state';
+import { messageSchema } from '../assets/types/messages.type';
 
-const messageSchema = object({
-  name: pipe(string(), minLength(1)),
-  message: pipe(string(), minLength(1)),
-});
+export const Input = ({ chatID }: { chatID: string }) => {
+  const handleSend = userState((state) => state.handleSend);
+  const user = userState().user;
+  if (!user) return null;
 
-export const Input = () => {
-  const { handleSend } = useMessages();
-  const name = userState().name;
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const data = Object.fromEntries(formData);
-    const finalData = parse(messageSchema, { message: data.message, name });
-    handleSend!(finalData);
+    const finalData = parse(messageSchema, {
+      text: data.message,
+      userID: user.id,
+      chatID,
+    });
+    handleSend(finalData);
     event.currentTarget.reset();
   };
 
