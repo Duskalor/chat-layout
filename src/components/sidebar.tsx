@@ -18,7 +18,7 @@ export const Sidebar = () => {
 
   return (
     <section className='xl:px-3 py-2 border-r-2 border-r-gray-200 h-full'>
-      <div className='border-b-2 border-borderGray pb-5'>
+      <div className='border-b-2 border-borderGray pb-5 pr-5'>
         <div className='flex justify-between items-center h-[80px]'>
           <div className='  p-2 font-bold text-2xl'>Chats</div>
           <h1>{user?.name}</h1>
@@ -35,6 +35,9 @@ export const Sidebar = () => {
           return <ChatUser key={msg.id} chat={msg} />;
         })}
       </ul>
+      <footer>
+        <button>Cerrar</button>
+      </footer>
     </section>
   );
 };

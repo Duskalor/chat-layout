@@ -3,3 +3,6 @@
 @theme {
   --color-borderGray: #e0e0db;
 }
+* {
+  outline: 1px red solid;
+}

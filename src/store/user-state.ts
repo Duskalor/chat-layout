@@ -3,6 +3,7 @@ import { Messages } from '../assets/types/messages.type';
 import { User } from '../assets/types/users.type';
 import { Chat } from '../assets/types/chat.type';
 import { socket } from '../lib/socket-client';
+import { persist } from 'zustand/middleware';
 
 type fn = (message: Messages) => void;
 
@@ -15,13 +16,18 @@ interface UserState {
   handleSend: (user: Messages) => void;
 }
 
-export const userState = create<UserState>((set) => ({
-  user: null,
-  sendMessage: null,
-  chats: [],
-  setUser: (user: User) => set({ user }),
-  setChats: (chats: Chat[]) => set({ chats }),
-  handleSend: (message: Messages) => {
-    socket.emit('sendMessage', message);
-  },
-}));
+export const userState = create<UserState>()(
+  persist(
+    (set) => ({
+      user: null,
+      sendMessage: null,
+      chats: [],
+      setUser: (user: User) => set({ user }),
+      setChats: (chats: Chat[]) => set({ chats }),
+      handleSend: (message: Messages) => {
+        socket.emit('sendMessage', message);
+      },
+    }),
+    { name: 'user' }
+  )
+);

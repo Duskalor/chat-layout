@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { userState } from '../store/user-state';
 import { AnotherChat } from './anotherChat';
 import { Input } from './Input';
@@ -28,20 +28,29 @@ export const Chat = () => {
 
   useEffect(() => {
     const objDiv = divElement.current;
-    objDiv!.scrollTop = objDiv!.scrollHeight;
-  }, [chats]);
+    if (objDiv) {
+      objDiv!.scrollTop = objDiv!.scrollHeight;
+    }
+  }, [chat]);
 
+  const newChat = useMemo(() => {
+    const userColorMap = new Map();
+
+    chat?.participants.forEach((participant, index) => {
+      const colorIndex = index % colors.length;
+      userColorMap.set(participant.id, colors[colorIndex]);
+    });
+
+    const colorMessages = chat?.messages.map((msg) => {
+      return {
+        ...msg,
+        color: userColorMap.get(msg.userID) || colors[0],
+      };
+    });
+
+    return { ...chat, messages: colorMessages };
+  }, [chat]);
   if (!chat) return null;
-
-  const colorMessages = chat.messages.map((c) => {
-    const randomIndex = Math.floor(Math.random() * colors.length);
-    const color = colors[randomIndex];
-    return {
-      ...c,
-      color,
-    };
-  });
-  const newChat = { ...chat, messages: colorMessages };
 
   return (
     <div className='h-full'>
@@ -62,18 +71,19 @@ export const Chat = () => {
             ref={divElement}
             className='flex-1 bg-white overflow-y-auto p-4 space-y-4'
           >
-            {newChat?.messages.map((messages, i) => {
-              return messages.userID === user?.id ? (
-                <UserChat msg={messages} key={i} />
-              ) : (
-                <AnotherChat
-                  isGroup={chat.isGroup}
-                  msg={messages}
-                  key={i}
-                  participants={chat.participants}
-                />
-              );
-            })}
+            {newChat.messages &&
+              newChat?.messages.map((messages, i) => {
+                return messages.userID === user?.id ? (
+                  <UserChat msg={messages} key={i} />
+                ) : (
+                  <AnotherChat
+                    isGroup={chat.isGroup}
+                    msg={messages}
+                    key={i}
+                    participants={chat.participants}
+                  />
+                );
+              })}
           </div>
 
           <Input chatID={chat.id} />

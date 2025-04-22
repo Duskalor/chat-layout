@@ -5,12 +5,23 @@ import { Sidebar } from '../components/sidebar';
 
 export const GeneralLayout = () => {
   const navigate = useNavigate();
-  const user = userState().user;
+  const user = userState((state) => state.user);
+
   useEffect(() => {
     if (!user) {
       navigate('/users');
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    const keydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') navigate('/');
+    };
+    document.addEventListener('keydown', keydown);
+    return () => {
+      document.removeEventListener('keydown', keydown);
+    };
+  }, []);
 
   if (!user) return null;
   return (
