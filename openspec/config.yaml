@@ -1,0 +1,38 @@
+schema: spec-driven
+
+context: |
+  Tech stack: 
+    - Frontend: React 19, TypeScript, Vite, Tailwind CSS v4, Zustand, Socket.io-client, React Router v7
+    - Backend: Node.js, Express, TypeScript, Socket.io
+  Architecture: Monorepo with frontend/ and backend/ directories
+  Testing: None configured
+  Style: ESLint with React hooks rules, Tailwind CSS v4
+
+paths:
+  frontend: frontend/
+  backend: backend/
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Identify affected modules/components
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group tasks by phase (infrastructure, implementation, testing)
+    - Use hierarchical numbering (1.1, 1.2, etc.)
+    - Keep tasks small enough to complete in one session
+  apply:
+    - Follow existing code patterns and conventions
+    - Use explicit imports (no path aliases)
+    - Name components in PascalCase, functions/variables in camelCase
+  verify:
+    - Run type-check (tsc -b) and build before committing
+    - Run linting (pnpm lint)
+    - Compare implementation against every spec scenario
+  archive:
+    - Warn before merging destructive deltas (large removals)
