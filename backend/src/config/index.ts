@@ -7,6 +7,7 @@ export interface AppConfig {
   corsOrigin: string;
   jwtSecret: string;
   jwtExpiresIn: string;
+  databaseUrl: string;
 }
 
 function loadConfig(): AppConfig {
@@ -14,9 +15,14 @@ function loadConfig(): AppConfig {
   const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
   const jwtSecret = process.env.JWT_SECRET;
   const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h';
+  const databaseUrl = process.env.DATABASE_URL;
 
   if (!jwtSecret) {
     throw new Error('JWT_SECRET is required in environment variables');
+  }
+
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL is required in environment variables');
   }
 
   return {
@@ -24,6 +30,7 @@ function loadConfig(): AppConfig {
     corsOrigin,
     jwtSecret,
     jwtExpiresIn,
+    databaseUrl,
   };
 }
 

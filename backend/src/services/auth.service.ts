@@ -7,7 +7,7 @@ import { findUserByEmail } from './user.service.js';
 import { getUserChats } from './chat.service.js';
 
 export const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
-  const user = findUserByEmail(credentials.email);
+  const user = await findUserByEmail(credentials.email);
 
   if (!user) {
     throw new UnauthorizedError('Invalid credentials');
@@ -25,7 +25,7 @@ export const login = async (credentials: LoginRequest): Promise<LoginResponse> =
     { expiresIn: config.jwtExpiresIn } as SignOptions
   );
 
-  const chats = getUserChats(user.id);
+  const chats = await getUserChats(user.id);
 
   const { password, ...userWithoutPassword } = user;
 

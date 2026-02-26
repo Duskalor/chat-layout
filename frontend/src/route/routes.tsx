@@ -3,6 +3,7 @@ import { GeneralLayout } from '../layout/generalLayout';
 import { Chat } from '../components/chat';
 import { LoginForm } from '../components/login-form';
 import { ProtectedRoute } from '../components/protected-route';
+import { Dashboard } from '../components/Dashboard';
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +18,10 @@ export const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
+      {
+        path: '/dashboard',
+        element: <Dashboard />,
+      },
       {
         path: '/:chatID',
         Component: Chat,

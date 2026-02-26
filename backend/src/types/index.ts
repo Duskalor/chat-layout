@@ -42,6 +42,15 @@ export interface LoginResponse {
   chats: Chat[];
 }
 
+export interface Todo {
+  id: string;
+  title: string;
+  completed: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+}
+
 export interface AuthRequest extends Request {
   user?: {
     userId: string;

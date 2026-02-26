@@ -1,102 +1,121 @@
+import { prisma } from '../config/prisma.js';
 import { Chat, Message, User } from '../types/index.js';
 
-const mockMessages: Message[] = [
-  {
-    id: 'm1',
-    chatId: 'c1',
-    senderId: '2',
-    text: 'Hello there!',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'm2',
-    chatId: 'c1',
-    senderId: '1',
-    text: 'Hi! How are you?',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'm3',
-    chatId: 'c2',
-    senderId: '3',
-    text: 'Hey team!',
-    createdAt: new Date().toISOString(),
-  },
-];
-
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    password: 'hashed',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    password: 'hashed',
-    createdAt: new Date('2024-01-02'),
-    updatedAt: new Date('2024-01-02'),
-  },
-  {
-    id: '3',
-    name: 'Bob Wilson',
-    email: 'bob@example.com',
-    password: 'hashed',
-    createdAt: new Date('2024-01-03'),
-    updatedAt: new Date('2024-01-03'),
-  },
-];
-
-const mockChats: Chat[] = [
-  {
-    id: 'c1',
-    name: 'John & Jane',
-    isGroup: false,
-    participants: [mockUsers[0], mockUsers[1]],
-    messages: [mockMessages[0], mockMessages[1]],
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    lastMessage: {
-      createdAt: mockMessages[1].createdAt,
-      senderId: mockMessages[1].senderId,
-      text: mockMessages[1].text,
+export const getUserChats = async (userId: string): Promise<Chat[]> => {
+  const chats = await prisma.chat.findMany({
+    where: {
+      participants: {
+        some: { id: userId },
+      },
     },
-  },
-  {
-    id: 'c2',
-    name: 'Team Chat',
-    isGroup: true,
-    participants: [mockUsers[0], mockUsers[1], mockUsers[2]],
-    messages: [mockMessages[2]],
-    createdAt: new Date('2024-01-02'),
-    updatedAt: new Date('2024-01-02'),
-    lastMessage: {
-      createdAt: mockMessages[2].createdAt,
-      senderId: mockMessages[2].senderId,
-      text: mockMessages[2].text,
+    include: {
+      participants: true,
+      messages: { orderBy: { createdAt: 'asc' } },
     },
-  },
-];
+  });
 
-export const getUserChats = (userId: string): Chat[] => {
-  return mockChats.filter((chat) =>
-    chat.participants.some((p) => p.id === userId)
-  );
+  return chats.map((chat) => ({
+    id: chat.id,
+    name: chat.name,
+    isGroup: chat.isGroup,
+    participants: chat.participants,
+    messages: chat.messages.map((m) => ({
+      id: m.id,
+      chatId: m.chatId,
+      senderId: m.senderId,
+      text: m.text,
+      createdAt: m.createdAt.toISOString(),
+    })),
+    createdAt: chat.createdAt,
+    updatedAt: chat.updatedAt,
+    lastMessage: chat.messages.length > 0 ? {
+      text: chat.messages[chat.messages.length - 1].text,
+      senderId: chat.messages[chat.messages.length - 1].senderId,
+      createdAt: chat.messages[chat.messages.length - 1].createdAt.toISOString(),
+    } : undefined,
+  }));
 };
 
-export const generateMockChats = (userId: string): Chat[] => {
+export const generateMockChats = async (userId: string): Promise<Chat[]> => {
   return getUserChats(userId);
 };
 
-export const getChatById = (chatId: string): Chat | undefined => {
-  return mockChats.find((chat) => chat.id === chatId);
+export const getChatById = async (chatId: string): Promise<Chat | null> => {
+  const chat = await prisma.chat.findUnique({
+    where: { id: chatId },
+    include: {
+      participants: true,
+      messages: true,
+    },
+  });
+
+  if (!chat) return null;
+
+  return {
+    id: chat.id,
+    name: chat.name,
+    isGroup: chat.isGroup,
+    participants: chat.participants,
+    messages: chat.messages.map((m) => ({
+      id: m.id,
+      chatId: m.chatId,
+      senderId: m.senderId,
+      text: m.text,
+      createdAt: m.createdAt.toISOString(),
+    })),
+    createdAt: chat.createdAt,
+    updatedAt: chat.updatedAt,
+  };
 };
 
-export const getChatMessages = (chatId: string): Message[] => {
-  const chat = mockChats.find((c) => c.id === chatId);
-  return chat?.messages || [];
+export const getChatMessages = async (chatId: string): Promise<Message[]> => {
+  const messages = await prisma.message.findMany({
+    where: { chatId },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return messages.map((m) => ({
+    id: m.id,
+    chatId: m.chatId,
+    senderId: m.senderId,
+    text: m.text,
+    createdAt: m.createdAt.toISOString(),
+  }));
+};
+
+export const createMessage = async (
+  text: string,
+  chatId: string,
+  senderId: string
+): Promise<Message> => {
+  const createdMessage = await prisma.message.create({
+    data: {
+      text,
+      chatId,
+      senderId,
+    },
+  });
+
+  await prisma.lastMessage.upsert({
+    where: { chatId },
+    create: {
+      text,
+      senderId,
+      createdAt: createdMessage.createdAt.toISOString(),
+      chatId,
+    },
+    update: {
+      text,
+      senderId,
+      createdAt: createdMessage.createdAt.toISOString(),
+    },
+  });
+
+  return {
+    id: createdMessage.id,
+    chatId: createdMessage.chatId,
+    senderId: createdMessage.senderId,
+    text: createdMessage.text,
+    createdAt: createdMessage.createdAt.toISOString(),
+  };
 };

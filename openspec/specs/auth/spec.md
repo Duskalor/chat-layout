@@ -72,7 +72,7 @@ The user selection flow SHALL now support both initial login and post-logout re-
 - AND navigate to the chat interface at `/`
 - AND the socket connection SHALL be established for the new user
 
-## ADDED Requirements (Login)
+## ADDED Requirements
 
 ### Requirement: Login Form Display
 
@@ -93,23 +93,33 @@ The login form MUST be displayed when an unauthenticated user accesses the appli
 
 ### Requirement: Credential Validation
 
-The system MUST validate user credentials against the backend authentication endpoint. The system SHALL send a POST request to `/auth/login` with email and password. The system SHALL handle both successful and failed authentication responses.
+The system MUST validate user credentials against the database. The authentication service MUST query the database to verify email and password.
 
-#### Scenario: Successful Login with Valid Credentials
+#### Scenario: Login with Valid Database Credentials
 
-- GIVEN the user has entered a valid email and password
-- WHEN the user submits the login form
-- THEN the system SHALL send credentials to `/auth/login`
-- AND on successful response, the system SHALL store the authentication token
-- AND the system SHALL navigate to the chat interface
+- GIVEN a user exists in the database with email "john@example.com" and password "password123"
+- WHEN the user submits login credentials to `/auth/login`
+- THEN the system SHALL query the database for a user with the provided email
+- AND the system SHALL validate the password using bcrypt comparison
+- AND the system SHALL return a valid JWT token
+- AND the user SHALL be authenticated successfully
 
-#### Scenario: Failed Login with Invalid Credentials
+#### Scenario: Login with Invalid Email
 
-- GIVEN the user has entered an invalid email or password
-- WHEN the user submits the login form
-- THEN the system SHALL send credentials to `/auth/login`
-- AND on failure response, the system SHALL display an error message
-- AND the login form SHALL remain visible
+- GIVEN no user exists in the database with email "wrong@example.com"
+- WHEN the user submits login credentials to `/auth/login`
+- THEN the system SHALL query the database
+- AND the system SHALL return an UnauthorizedError with message "Invalid credentials"
+- AND the user SHALL NOT be authenticated
+
+#### Scenario: Login with Wrong Password
+
+- GIVEN a user exists in the database with email "john@example.com"
+- WHEN the user submits login credentials with an incorrect password
+- THEN the system SHALL query the database for the user
+- AND the system SHALL fail the bcrypt password comparison
+- AND the system SHALL return an UnauthorizedError with message "Invalid credentials"
+- AND the user SHALL NOT be authenticated
 
 #### Scenario: Login Form Validation
 
@@ -139,6 +149,27 @@ The system SHALL maintain the authentication session across page refreshes. The 
 - WHEN the socket client connects
 - THEN the system SHALL include the authentication token in the connection
 - AND the server SHALL validate the token for socket communication
+
+### Requirement: Database Connection
+
+The system MUST establish a connection to the PostgreSQL database on backend startup. The backend SHALL fail to start if the database connection cannot be established.
+
+#### Scenario: Backend Starts with Valid Database
+
+- GIVEN the DATABASE_URL environment variable is set correctly
+- AND the PostgreSQL database is running and accessible
+- WHEN the backend server starts
+- THEN the system SHALL call connectDatabase()
+- AND the connection to PostgreSQL SHALL be established
+- AND the backend SHALL accept requests
+
+#### Scenario: Backend Starts without Database URL
+
+- GIVEN the DATABASE_URL environment variable is not set
+- WHEN the backend server starts
+- THEN the system SHALL throw a configuration error
+- AND the backend SHALL NOT start
+- AND the error message SHALL indicate DATABASE_URL is missing
 
 ### Requirement: Protected Routes
 

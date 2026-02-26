@@ -15,7 +15,7 @@ export const validate = <T extends GenericSchema>(schema: T) => {
   };
 };
 
-import { object, pipe, string, minLength, email } from 'valibot';
+import { object, pipe, string, minLength, email, optional } from 'valibot';
 
 export const loginSchema = pipe(
   object({
@@ -25,7 +25,7 @@ export const loginSchema = pipe(
 );
 
 export const messageSchema = object({
-  id: string(),
+  id: optional(string()),
   chatId: pipe(string(), minLength(1, 'chatId is required')),
   senderId: string(),
   text: pipe(string(), minLength(1, 'Text is required')),

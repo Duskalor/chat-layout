@@ -9,6 +9,9 @@ import routes from './routes/index.js';
 import { errorMiddleware } from './middleware/error.js';
 import { getChats, sendMessage } from './controllers/chat.controller.js';
 import { AuthUser } from './middleware/auth.js';
+import { connectDatabase } from './config/prisma.js';
+import { getDashboardStats } from './services/stats.service.js';
+import { PresenceUpdate, DashboardStats } from './types/dashboard.js';
 
 dotenv.config();
 
@@ -52,17 +55,52 @@ io.use((socket, next) => {
   next();
 });
 
-io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id, 'User:', socket.data.user?.userId);
+const onlineUsers: Map<string, Set<string>> = new Map();
 
-  socket.on('connected', (userId: string) => {
+const getOnlineUserIds = (): string[] => {
+  return Array.from(onlineUsers.keys());
+};
+
+const emitPresence = (): void => {
+  const presenceUpdate: PresenceUpdate = {
+    onlineUsers: getOnlineUserIds(),
+  };
+  io.emit('dashboard:presence', presenceUpdate);
+};
+
+let cachedStats: DashboardStats | null = null;
+
+const emitStats = async (): Promise<void> => {
+  try {
+    cachedStats = await getDashboardStats(getOnlineUserIds().length);
+    io.emit('dashboard:stats', cachedStats);
+  } catch (error) {
+    console.error('Failed to emit stats:', error);
+  }
+};
+
+const statsInterval = setInterval(emitStats, 10000);
+
+io.on('connection', (socket) => {
+  const user = socket.data.user as AuthUser;
+  console.log('Client connected:', socket.id, 'User:', user?.userId);
+
+  if (user?.userId) {
+    if (!onlineUsers.has(user.userId)) {
+      onlineUsers.set(user.userId, new Set());
+    }
+    onlineUsers.get(user.userId)!.add(socket.id);
+    emitPresence();
+  }
+
+  socket.on('connected', async (userId: string) => {
     console.log(`User ${userId} connected`);
-    const chats = getChats(userId);
+    const chats = await getChats(userId);
     socket.emit('messages', chats);
   });
 
-  socket.on('sendMessage', (message: unknown) => {
-    const result = sendMessage(message, (event, data) => {
+  socket.on('sendMessage', async (message: unknown) => {
+    const result = await sendMessage(message, (event, data) => {
       io.emit(event, data);
     });
     if ('error' in result) {
@@ -72,9 +110,31 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
+    const user = socket.data.user as AuthUser;
+    if (user?.userId) {
+      const userSockets = onlineUsers.get(user.userId);
+      if (userSockets) {
+        userSockets.delete(socket.id);
+        if (userSockets.size === 0) {
+          onlineUsers.delete(user.userId);
+        }
+      }
+      emitPresence();
+    }
   });
 });
 
-httpServer.listen(config.port, () => {
-  console.log(`Server running on http://localhost:${config.port}`);
-});
+const startServer = async () => {
+  try {
+    await connectDatabase();
+    httpServer.listen(config.port, () => {
+      console.log(`Server running on http://localhost:${config.port}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    clearInterval(statsInterval);
+    process.exit(1);
+  }
+};
+
+startServer();

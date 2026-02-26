@@ -3,19 +3,25 @@
   "version": "1.0.0",
   "description": "Chat application backend",
   "main": "dist/index.js",
+  "prisma": {
+    "seed": "tsx backend/prisma/seed.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "db:seed": "prisma db seed"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/adapter-pg": "^7.4.1",
+    "@prisma/client": "^7.4.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
     "express": "^4.21.0",
     "jsonwebtoken": "^9.0.3",
-    "prisma": "^5.22.0",
+    "pg": "^8.18.0",
+    "prisma": "^7.4.1",
     "socket.io": "^4.8.0",
     "valibot": "^1.2.0"
   },
@@ -25,6 +31,7 @@
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.16.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   }
